@@ -1,0 +1,77 @@
+abstract class Room {
+    private String roomType;
+    private int numberOfBeds;
+    private double price;
+
+    public Room(String roomType, int numberOfBeds, double price) {
+        this.roomType = roomType;
+        this.numberOfBeds = numberOfBeds;
+        this.price = price;
+    }
+
+    public String getRoomType() {
+        return roomType;
+    }
+
+    public int getNumberOfBeds() {
+        return numberOfBeds;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void displayRoomDetails() {
+        System.out.println("Room Type: " + roomType + " | Beds: " + numberOfBeds + " | Price: $" + price);
+    }
+}
+
+class SingleRoom extends Room {
+    public SingleRoom() {
+        super("Single Room", 1, 100.0);
+    }
+}
+
+class DoubleRoom extends Room {
+    public DoubleRoom() {
+        super("Double Room", 2, 150.0);
+    }
+}
+
+class SuiteRoom extends Room {
+    public SuiteRoom() {
+        super("Suite Room", 2, 300.0);
+    }
+}
+
+public class UseCase2RoomInitialization {
+    public static void main(String[] args) {
+        System.out.println("Welcome to the Book My Stay Application");
+        System.out.println("Application Name: Hotel Booking Management System");
+        System.out.println("Version: 2.0");
+        System.out.println(" ");
+
+        Room singleRoom = new SingleRoom();
+        Room doubleRoom = new DoubleRoom();
+        Room suiteRoom = new SuiteRoom();
+
+        int singleRoomAvailability = 10;
+        int doubleRoomAvailability = 5;
+        int suiteRoomAvailability = 2;
+
+        System.out.println("Room Details and Current Availability:");
+        System.out.println(" ");
+        
+        singleRoom.displayRoomDetails();
+        System.out.println("Available Rooms: " + singleRoomAvailability);
+        System.out.println();
+
+        doubleRoom.displayRoomDetails();
+        System.out.println("Available Rooms: " + doubleRoomAvailability);
+        System.out.println();
+
+        suiteRoom.displayRoomDetails();
+        System.out.println("Available Rooms: " + suiteRoomAvailability);
+        System.out.println(" ");
+    }
+}
