@@ -1,0 +1,58 @@
+import java.util.HashMap;
+import java.util.Map;
+
+class RoomInventory {
+    private Map<String, Integer> inventory;
+
+    public RoomInventory() {
+        this.inventory = new HashMap<>();
+    }
+
+    public void registerRoomType(String roomType, int availableCount) {
+        inventory.put(roomType, availableCount);
+    }
+
+    public int getAvailability(String roomType) {
+        return inventory.getOrDefault(roomType, 0);
+    }
+
+    public void updateAvailability(String roomType, int updatedCount) {
+        if (inventory.containsKey(roomType)) {
+            inventory.put(roomType, updatedCount);
+        } else {
+            System.out.println("Error: Room type '" + roomType + "' does not exist in inventory.");
+        }
+    }
+
+    public void displayInventory() {
+        System.out.println("Current Room Inventory:");
+        System.out.println(" ");
+        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+            System.out.println("Room Type: " + entry.getKey() + " | Available: " + entry.getValue());
+        }
+        System.out.println(" ");
+    }
+}
+
+public class UseCase3InventorySetup {
+    public static void main(String[] args) {
+        System.out.println("Welcome to the Book My Stay Application");
+        System.out.println("Application Name: Hotel Booking Management System");
+        System.out.println("Version: 3.0");
+        System.out.println(" ");
+
+        RoomInventory inventory = new RoomInventory();
+        
+        inventory.registerRoomType("Single Room", 10);
+        inventory.registerRoomType("Double Room", 5);
+        inventory.registerRoomType("Suite Room", 2);
+
+        inventory.displayInventory();
+
+        System.out.println("Simulating an update (Booking 1 Double Room)...");
+        int currentDoubleRooms = inventory.getAvailability("Double Room");
+        inventory.updateAvailability("Double Room", currentDoubleRooms - 1);
+
+        inventory.displayInventory();
+    }
+}
