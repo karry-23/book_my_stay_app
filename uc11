@@ -1,0 +1,127 @@
+import java.util.*;
+
+class BookingRequest {
+    String guestName;
+    String roomType;
+    int roomsRequested;
+
+    public BookingRequest(String guestName, String roomType, int roomsRequested) {
+        this.guestName = guestName;
+        this.roomType = roomType;
+        this.roomsRequested = roomsRequested;
+    }
+}
+
+class ConcurrentHotelSystem {
+
+    private Map<String, Integer> inventory = new HashMap<>();
+    private Queue<BookingRequest> bookingQueue = new LinkedList<>();
+
+    public ConcurrentHotelSystem() {
+        inventory.put("Standard", 5);
+        inventory.put("Deluxe", 3);
+        inventory.put("Suite", 2);
+    }
+
+    public synchronized void addRequest(BookingRequest request) {
+        bookingQueue.add(request);
+        System.out.println(request.guestName + " added request for " +
+                request.roomsRequested + " " + request.roomType + " room(s).");
+    }
+
+    public synchronized BookingRequest getRequest() {
+        if (bookingQueue.isEmpty()) {
+            return null;
+        }
+        return bookingQueue.poll();
+    }
+
+    public synchronized void processBooking(BookingRequest request) {
+
+        String roomType = request.roomType;
+        int requested = request.roomsRequested;
+
+        if (!inventory.containsKey(roomType)) {
+            System.out.println("Invalid room type for " + request.guestName);
+            return;
+        }
+
+        int available = inventory.get(roomType);
+
+        if (requested <= available) {
+            try { Thread.sleep(100); } catch (InterruptedException e) {}
+
+            inventory.put(roomType, available - requested);
+
+            System.out.println("Booking SUCCESS for " + request.guestName +
+                    ": " + requested + " " + roomType +
+                    " room(s). Remaining: " + inventory.get(roomType));
+        } else {
+            System.out.println("Booking FAILED for " + request.guestName +
+                    ": Not enough " + roomType + " rooms.");
+        }
+    }
+
+    public void displayInventory() {
+        System.out.println("\nFinal Inventory:");
+        for (String type : inventory.keySet()) {
+            System.out.println(type + " -> " + inventory.get(type));
+        }
+    }
+}
+
+class BookingProcessor extends Thread {
+
+    private ConcurrentHotelSystem system;
+
+    public BookingProcessor(ConcurrentHotelSystem system) {
+        this.system = system;
+    }
+
+    public void run() {
+        while (true) {
+            BookingRequest request = system.getRequest();
+
+            if (request == null) {
+                break;
+            }
+
+            system.processBooking(request);
+        }
+    }
+}
+
+public class UseCase11ConcurrentBookingSimulation {
+
+    public static void main(String[] args) {
+
+        ConcurrentHotelSystem system = new ConcurrentHotelSystem();
+
+        system.addRequest(new BookingRequest("Guest1", "Deluxe", 2));
+        system.addRequest(new BookingRequest("Guest2", "Deluxe", 2));
+        system.addRequest(new BookingRequest("Guest3", "Standard", 3));
+        system.addRequest(new BookingRequest("Guest4", "Standard", 3));
+        system.addRequest(new BookingRequest("Guest5", "Suite", 1));
+        system.addRequest(new BookingRequest("Guest6", "Suite", 2));
+
+        System.out.println("\nProcessing Concurrent Bookings ");
+
+        Thread t1 = new BookingProcessor(system);
+        Thread t2 = new BookingProcessor(system);
+        Thread t3 = new BookingProcessor(system);
+
+        t1.start();
+        t2.start();
+        t3.start();
+
+        try {
+            t1.join();
+            t2.join();
+            t3.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        system.displayInventory();
+    }
+}
