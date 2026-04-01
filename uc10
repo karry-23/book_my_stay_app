@@ -1,0 +1,151 @@
+import java.util.*;
+
+// Custom Exception for Booking Errors
+class BookingException extends Exception {
+    public BookingException(String message) {
+        super(message);
+    }
+}
+
+// Booking Class
+class Booking {
+    String bookingId;
+    String roomType;
+    int roomsBooked;
+    List<String> roomIds;
+    boolean isCancelled;
+
+    public Booking(String bookingId, String roomType, int roomsBooked, List<String> roomIds) {
+        this.bookingId = bookingId;
+        this.roomType = roomType;
+        this.roomsBooked = roomsBooked;
+        this.roomIds = roomIds;
+        this.isCancelled = false;
+    }
+}
+
+// Main System
+class HotelSystem {
+
+    private Map<String, Integer> inventory = new HashMap<>();
+    private Map<String, Booking> bookings = new HashMap<>();
+    private Stack<String> rollbackStack = new Stack<>();
+
+    private int roomCounter = 1;
+
+    public HotelSystem() {
+        inventory.put("Standard", 5);
+        inventory.put("Deluxe", 3);
+        inventory.put("Suite", 2);
+    }
+
+    // Display Inventory
+    public void displayInventory() {
+        System.out.println("\nCurrent Inventory:");
+        for (String type : inventory.keySet()) {
+            System.out.println(type + " -> " + inventory.get(type));
+        }
+    }
+
+    // Booking Method
+    public void book(String bookingId, String roomType, int count) {
+        try {
+            if (!inventory.containsKey(roomType)) {
+                throw new BookingException("Invalid room type.");
+            }
+
+            if (count <= 0) {
+                throw new BookingException("Invalid room count.");
+            }
+
+            int available = inventory.get(roomType);
+            if (count > available) {
+                throw new BookingException("Not enough rooms available.");
+            }
+
+            List<String> allocatedRooms = new ArrayList<>();
+
+            for (int i = 0; i < count; i++) {
+                String roomId = roomType.substring(0, 1) + roomCounter++;
+                allocatedRooms.add(roomId);
+            }
+
+            inventory.put(roomType, available - count);
+
+            Booking booking = new Booking(bookingId, roomType, count, allocatedRooms);
+            bookings.put(bookingId, booking);
+
+            System.out.println("Booking successful: " + bookingId + " -> " + allocatedRooms);
+
+        } catch (BookingException e) {
+            System.out.println("Booking Failed: " + e.getMessage());
+        }
+    }
+
+    // Cancellation Method
+    public void cancel(String bookingId) {
+        try {
+            if (!bookings.containsKey(bookingId)) {
+                throw new BookingException("Booking ID does not exist.");
+            }
+
+            Booking booking = bookings.get(bookingId);
+
+            if (booking.isCancelled) {
+                throw new BookingException("Booking already cancelled.");
+            }
+
+            // LIFO rollback using stack
+            for (String roomId : booking.roomIds) {
+                rollbackStack.push(roomId);
+            }
+
+            // Restore inventory
+            int current = inventory.get(booking.roomType);
+            inventory.put(booking.roomType, current + booking.roomsBooked);
+
+            // Mark as cancelled
+            booking.isCancelled = true;
+
+            System.out.println("Cancellation successful for Booking ID: " + bookingId);
+
+            // Show rollback order
+            System.out.print("Rooms released (LIFO order): ");
+            while (!rollbackStack.isEmpty()) {
+                System.out.print(rollbackStack.pop() + " ");
+            }
+            System.out.println();
+
+        } catch (BookingException e) {
+            System.out.println("Cancellation Failed: " + e.getMessage());
+        }
+    }
+}
+
+// Driver Class
+public class UseCase10BookingCancellation {
+
+    public static void main(String[] args) {
+
+        HotelSystem system = new HotelSystem();
+
+        system.displayInventory();
+
+        System.out.println("\n--- Booking Phase ---");
+        system.book("B101", "Deluxe", 2);
+        system.book("B102", "Standard", 3);
+
+        system.displayInventory();
+
+        System.out.println("\n--- Cancellation Phase ---");
+        system.cancel("B101");
+
+        // Invalid cancellation
+        system.cancel("B999");
+
+        // Duplicate cancellation
+        system.cancel("B101");
+
+        system.displayInventory();
+    }
+}
