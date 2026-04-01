@@ -1,0 +1,90 @@
+import java.util.HashMap;
+import java.util.Map;
+
+class InvalidBookingException extends Exception {
+    public InvalidBookingException(String message) {
+        super(message);
+    }
+}
+
+class BookingValidator {
+
+    public static void validate(String roomType, int roomsRequested, Map<String, Integer> inventory)
+            throws InvalidBookingException {
+
+        if (!inventory.containsKey(roomType)) {
+            throw new InvalidBookingException("Error: Invalid room type selected -> " + roomType);
+        }
+
+        if (roomsRequested <= 0) {
+            throw new InvalidBookingException("Error: Number of rooms must be greater than zero.");
+        }
+
+        int availableRooms = inventory.get(roomType);
+        if (roomsRequested > availableRooms) {
+            throw new InvalidBookingException(
+                    "Error: Not enough rooms available. Requested: " + roomsRequested +
+                    ", Available: " + availableRooms);
+        }
+    }
+}
+
+class HotelBookingSystem {
+
+    private Map<String, Integer> inventory = new HashMap<>();
+
+    public HotelBookingSystem() {
+        inventory.put("Standard", 5);
+        inventory.put("Deluxe", 3);
+        inventory.put("Suite", 2);
+    }
+
+    public void displayInventory() {
+        System.out.println("\nCurrent Room Availability:");
+        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+            System.out.println(entry.getKey() + " -> " + entry.getValue());
+        }
+    }
+
+    public void bookRoom(String roomType, int count) {
+        try {
+            BookingValidator.validate(roomType, count, inventory);
+
+            int updatedCount = inventory.get(roomType) - count;
+            inventory.put(roomType, updatedCount);
+
+            System.out.println("Booking successful: " + count + " " + roomType + " room(s) booked.");
+
+        } catch (InvalidBookingException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+}
+
+public class UseCase9ErrorHandlingValidation {
+
+    public static void main(String[] args) {
+
+        HotelBookingSystem system = new HotelBookingSystem();
+
+        system.displayInventory();
+
+        System.out.println("\n Booking Attempts ");
+
+        system.bookRoom("Deluxe", 2);
+
+        // Invalid room type
+        system.bookRoom("Premium", 1);
+
+        // Invalid room count
+        system.bookRoom("Standard", 0);
+
+        // Overbooking attempt
+        system.bookRoom("Suite", 5);
+
+        // Valid booking again
+        system.bookRoom("Standard", 3);
+
+        system.displayInventory();
+    }
+}
