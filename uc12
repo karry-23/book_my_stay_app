@@ -1,0 +1,116 @@
+import java.io.*;
+import java.util.*;
+
+class Booking implements Serializable {
+    String bookingId;
+    String roomType;
+    int roomsBooked;
+
+    public Booking(String bookingId, String roomType, int roomsBooked) {
+        this.bookingId = bookingId;
+        this.roomType = roomType;
+        this.roomsBooked = roomsBooked;
+    }
+
+    @Override
+    public String toString() {
+        return bookingId + ": " + roomsBooked + " " + roomType + " room(s)";
+    }
+}
+
+class HotelSystem implements Serializable {
+    Map<String, Integer> inventory = new HashMap<>();
+    Map<String, Booking> bookings = new HashMap<>();
+
+    public HotelSystem() {
+        inventory.put("Standard", 5);
+        inventory.put("Deluxe", 3);
+        inventory.put("Suite", 2);
+    }
+
+    public void displayInventory() {
+        System.out.println("\nInventory:");
+        for (String type : inventory.keySet()) {
+            System.out.println(type + " -> " + inventory.get(type));
+        }
+    }
+
+    public void displayBookings() {
+        System.out.println("\nBookings:");
+        if (bookings.isEmpty()) {
+            System.out.println("No bookings.");
+        } else {
+            for (Booking b : bookings.values()) {
+                System.out.println(b);
+            }
+        }
+    }
+
+    public boolean bookRoom(String bookingId, String roomType, int count) {
+        if (!inventory.containsKey(roomType)) return false;
+        int available = inventory.get(roomType);
+        if (count <= 0 || count > available) return false;
+
+        inventory.put(roomType, available - count);
+        bookings.put(bookingId, new Booking(bookingId, roomType, count));
+        System.out.println("Booking successful: " + bookingId);
+        return true;
+    }
+
+    public boolean cancelBooking(String bookingId) {
+        if (!bookings.containsKey(bookingId)) return false;
+
+        Booking b = bookings.remove(bookingId);
+        int available = inventory.get(b.roomType);
+        inventory.put(b.roomType, available + b.roomsBooked);
+        System.out.println("Booking cancelled: " + bookingId);
+        return true;
+    }
+
+    public void saveState(String filename) {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename))) {
+            out.writeObject(this);
+            System.out.println("System state saved to " + filename);
+        } catch (IOException e) {
+            System.out.println("Error saving system state: " + e.getMessage());
+        }
+    }
+
+    public static HotelSystem loadState(String filename) {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(filename))) {
+            System.out.println("System state loaded from " + filename);
+            return (HotelSystem) in.readObject();
+        } catch (FileNotFoundException e) {
+            System.out.println("Persistence file not found. Starting new system.");
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error loading system state. Starting new system.");
+        }
+        return new HotelSystem();
+    }
+}
+
+public class UseCase12DataPersistenceRecovery {
+
+    public static void main(String[] args) {
+
+        String filename = "hotel_system_state.ser";
+
+        HotelSystem system = HotelSystem.loadState(filename);
+
+        system.displayInventory();
+        system.displayBookings();
+
+        system.bookRoom("B101", "Deluxe", 2);
+        system.bookRoom("B102", "Standard", 3);
+
+        system.displayInventory();
+        system.displayBookings();
+
+        system.cancelBooking("B101");
+
+        system.displayInventory();
+        system.displayBookings();
+
+        system.saveState(filename);
+    }
+}
